@@ -7,9 +7,7 @@ import { createServer } from "node:http";
 import cors from "cors";
 
 // Routes
-import admin from "./Route/adminRoute.js";
-import user from "./Route/userRoute.js";
-import notary from "./Route/notaryRoute.js";
+import routes from "./Route/authRoute.js";
 
 const app = express();
 const server = createServer(app);
@@ -28,12 +26,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cors(corsOptions));
 
 // Routes
-// 1.Admin
-app.use("/api/admin", admin);
-// 2.Notary
-app.use("/api/advocate", notary);
-// 3.User
-app.use("/api/user", user);
+app.use("/api", routes);
 
 app.get("/", (req, res) => {
   res.send("Hello World!");

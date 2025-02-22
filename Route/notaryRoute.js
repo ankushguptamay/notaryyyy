@@ -2,14 +2,8 @@ import express from "express";
 const router = express.Router();
 
 import {
-  register,
-  loginByMobile,
-  verifyMobileOTP,
   myDetails,
   updateAdvocate,
-  refreshAccessToken,
-  rolePage,
-  logout,
   deleteProfilePic,
   addUpdateProfilePic,
   bookingMode,
@@ -19,21 +13,9 @@ import {
 import { category, categoryById } from "../Controller/category.controller.js";
 
 // Middleware
-import { verifyUserJWT } from "../MiddleWare/verifyJWTToken.js";
 import { failureResponse } from "../MiddleWare/responseMiddleware.js";
 import { uploadImage } from "../MiddleWare/uploadFile.js";
 
-// Auth
-router.post("/register", register);
-router.post("/loginByMobile", loginByMobile);
-router.post("/verifyMobileOTP", verifyMobileOTP);
-router.post("/refresh", refreshAccessToken);
-
-// Authantication
-router.use(verifyUserJWT);
-
-router.put("/rolePage", rolePage);
-router.put("/logout", logout);
 // Validate Role
 router.use((req, res, next) => {
   if (req.user.role !== "advocate") {

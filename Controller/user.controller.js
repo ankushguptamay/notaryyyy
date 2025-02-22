@@ -65,7 +65,7 @@ function transformUserDetails(user) {
     data.officeOrChamberPics =
       user.officeOrChamberPics.length > 0
         ? user.officeOrChamberPics.map((pic) => {
-            pic.url;
+            return { url: pic.url, _id: pic._id };
           })
         : [];
   }
@@ -166,7 +166,6 @@ const loginByMobile = async (req, res) => {
       otp: otp,
       receiverId: isUser._id,
     });
-    console.log(otp);
     // Send final success response
     return successResponse(
       res,
@@ -547,7 +546,7 @@ const advocateDetails = async (req, res) => {
 const addOfficePic = async (req, res) => {
   try {
     // File should be exist
-    if (req.files.length <= 0)
+    if (!req.files || req.files.length <= 0)
       return failureResponse(res, 400, "Please select atleast an image!", null);
 
     const officeOrChamberPics = [];
@@ -569,14 +568,14 @@ const addOfficePic = async (req, res) => {
         url: `${SHOW_BUNNY_FILE_HOSTNAME}/${bunnyFolderName}/${compressedImagePath.imageName}`,
       });
     }
-
     // Update
     await User.updateOne(
       { _id: req.user._id },
-      { $set: { officeOrChamberPics } }
+      { $push: { officeOrChamberPics: { $each: officeOrChamberPics } } },
+      { new: true }
     );
     // Final response
-    return successResponse(res, 201, message);
+    return successResponse(res, 201, "Added successfully");
   } catch (err) {
     failureResponse(res, 500, err.message, null);
   }
@@ -590,7 +589,7 @@ const deleteOfficePic = async (req, res) => {
     );
     const officeOrChamberPics = [];
     for (let i = 0; i < user._doc.officeOrChamberPics.length; i++) {
-      if (user._doc.officeOrChamberPics[i].toString() == id.toString()) {
+      if (user._doc.officeOrChamberPics[i]._id.toString() == id.toString()) {
         deleteFileToBunny(
           bunnyFolderName,
           user._doc.officeOrChamberPics[i].fileName
@@ -609,7 +608,7 @@ const deleteOfficePic = async (req, res) => {
       { $set: { officeOrChamberPics } }
     );
     // Final response
-    return successResponse(res, 200, "Profile pic deleted successfully!");
+    return successResponse(res, 200, "Pic deleted successfully!");
   } catch (err) {
     failureResponse(res, 500, err.message, null);
   }
