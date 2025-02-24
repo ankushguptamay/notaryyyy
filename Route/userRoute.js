@@ -16,6 +16,12 @@ import {
   myBooking,
   cancelBooking,
 } from "../Controller/booking.controller.js";
+import {
+  notificationDetails,
+  myNotification,
+  seenNotification,
+  unSeenNotification,
+} from "../Controller/notification.controller.js";
 
 // Middleware
 import { failureResponse } from "../MiddleWare/responseMiddleware.js";
@@ -46,5 +52,11 @@ router.get("/bookings", myBooking);
 router.get("/bookings/:id", bookingDetails);
 router.post("/booking", bookNotary);
 router.put("/bookings/:id", cancelBooking);
+
+// Notification
+router.get("/notification", myNotification);
+router.get("/notification/:id", notificationDetails);
+router.put("/seen", seenNotification);
+router.get("/unseen", unSeenNotification);
 
 export default router;

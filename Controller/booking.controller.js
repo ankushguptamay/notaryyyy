@@ -2,6 +2,10 @@ import {
   BOOKING_ADVOCATE_MESSAGE,
   BOOKING_ADVOCATE_TITLE,
   BOOKING_ADVOCATE_TYPE,
+  BOOKING_STATUS_USER_ACCEPTED_MESSAGE,
+  BOOKING_STATUS_USER_REJECTED_MESSAGE,
+  BOOKING_STATUS_USER_TITLE,
+  BOOKING_STATUS_USER_TYPE,
 } from "../Constant/notification.js";
 import { capitalizeFirstLetter } from "../Helper/formatChange.js";
 import {
