@@ -500,7 +500,14 @@ const updateUser = async (req, res) => {
 
 const searchAdvocate = async (req, res) => {
   try {
-    const { search, starRating, role = "advocate" } = req.query;
+    const {
+      search,
+      starRating,
+      userLocation = [],
+      radius = 3000, // 3km
+      role = "advocate",
+    } = req.query;
+    // const userLocation = [77.5946, 12.9716]; // User's longitude, latitude
 
     const resultPerPage = req.query.resultPerPage
       ? parseInt(req.query.resultPerPage)
@@ -512,11 +519,22 @@ const searchAdvocate = async (req, res) => {
     let query = {
       $and: [{ _id: { $nin: [req.user._id] } }, { role }, { isDelete: false }],
     };
+    // Location
+    if (userLocation.length === 2) {
+      query.$and.push({
+        officeOrChamberAddress: {
+          $near: {
+            $geometry: { type: "Point", coordinates: userLocation },
+            $maxDistance: radius,
+          },
+        },
+      });
+    }
+    // Search
     if (search) {
       const startWith = new RegExp("^" + search.toLowerCase(), "i");
       query.$and.push({ name: startWith });
     }
-
     // Filter
     if ((experienceLowerLimit, experienceUpperLimit)) {
       query.$and.push({
