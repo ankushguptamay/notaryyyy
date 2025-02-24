@@ -107,6 +107,23 @@ const validateChangeStatus = (data) => {
   return schema.validate(data);
 };
 
+const validateReplyOnMyReviews = (data) => {
+  const schema = joi.object().keys({
+    reviewId: joi.string().required(),
+    reply: joi.string().required(),
+  });
+  return schema.validate(data);
+};
+
+const validateAdvocateReview = (data) => {
+  const schema = joi.object().keys({
+    message: joi.string().required(),
+    advocate: joi.string().required(),
+    rating: joi.number().greater(0).less(6).required(),
+  });
+  return schema.validate(data);
+};
+
 export {
   validateUserRegistration,
   validateUserMobileLogin,
@@ -118,4 +135,6 @@ export {
   validateAddCategory,
   validateBookNotary,
   validateChangeStatus,
+  validateReplyOnMyReviews,
+  validateAdvocateReview,
 };

@@ -22,6 +22,13 @@ import {
   seenNotification,
   unSeenNotification,
 } from "../Controller/notification.controller.js";
+import {
+  getReviews,
+  giveUnGiveReactionOnReview,
+  replyOnMyReviews,
+  deleteMyReply,
+  getReviewDetails,
+} from "../Controller/advocateReview.controller.js";
 
 // Middleware
 import { failureResponse } from "../MiddleWare/responseMiddleware.js";
@@ -62,5 +69,12 @@ router.get("/notification", myNotification);
 router.get("/notification/:id", notificationDetails);
 router.put("/seen", seenNotification);
 router.get("/unseen", unSeenNotification);
+
+// Review
+router.post("/reply", replyOnMyReviews);
+router.delete("/reply/:id", deleteMyReply);
+router.get("/reviews", getReviews);
+router.get("/reviews/:id", getReviewDetails);
+router.put("/react/:id", giveUnGiveReactionOnReview);
 
 export default router;
