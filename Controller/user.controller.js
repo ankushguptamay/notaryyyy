@@ -529,6 +529,8 @@ const searchAdvocate = async (req, res) => {
           },
         },
       });
+    } else {
+      return failureResponse(res, 400, "User location is required!", null);
     }
     // Search
     if (search) {
