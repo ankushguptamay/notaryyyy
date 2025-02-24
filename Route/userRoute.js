@@ -10,6 +10,12 @@ import {
   advocateDetails,
 } from "../Controller/user.controller.js";
 import { category, categoryById } from "../Controller/category.controller.js";
+import {
+  bookNotary,
+  bookingDetails,
+  myBooking,
+  cancelBooking,
+} from "../Controller/booking.controller.js";
 
 // Middleware
 import { failureResponse } from "../MiddleWare/responseMiddleware.js";
@@ -34,5 +40,11 @@ router.get("/advocate/:id", advocateDetails);
 // Category
 router.get("/category", category);
 router.get("/category/:id", categoryById);
+
+// Booking
+router.get("/bookings", myBooking);
+router.get("/bookings/:id", bookingDetails);
+router.post("/booking", bookNotary);
+router.put("/bookings/:id", cancelBooking);
 
 export default router;

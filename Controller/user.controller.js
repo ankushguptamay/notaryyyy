@@ -34,6 +34,18 @@ const {
 } = process.env;
 import fs from "fs";
 import jwt from "jsonwebtoken";
+import {
+  BOOKING_MODE_MESSAGE,
+  BOOKING_MODE_TITLE,
+  BOOKING_MODE_TYPE,
+  LOGIN_MESSAGE,
+  LOGIN_TITLE,
+  LOGIN_TYPE,
+  REGISTRATION_MESSAGE,
+  REGISTRATION_TITLE,
+  REGISTRATION_TYPE,
+} from "../Constant/notification.js";
+import { UserNotification } from "../Model/notificationModel.js";
 const bunnyFolderName = "not-doc";
 
 // Helper
@@ -68,6 +80,7 @@ function transformUserDetails(user) {
             return { url: pic.url, _id: pic._id };
           })
         : [];
+    data.advocateAvailability = user.advocateAvailability || [];
   }
   return data;
 }
@@ -97,6 +110,16 @@ async function generateUserCode(preFix) {
   return userCode;
 }
 
+const advocateAvailability = [
+  { day: "sun", available: true, timePeriod: "10:00AM-06:00PM" },
+  { day: "mon", available: true, timePeriod: "10:00AM-06:00PM" },
+  { day: "tues", available: true, timePeriod: "10:00AM-06:00PM" },
+  { day: "wed", available: true, timePeriod: "10:00AM-06:00PM" },
+  { day: "thur", available: true, timePeriod: "10:00AM-06:00PM" },
+  { day: "fri", available: true, timePeriod: "10:00AM-06:00PM" },
+  { day: "sat", available: true, timePeriod: "10:00AM-06:00PM" },
+];
+
 // Main Controller
 const register = async (req, res) => {
   try {
@@ -105,7 +128,7 @@ const register = async (req, res) => {
     if (error) {
       return failureResponse(res, 400, error.details[0].message, null);
     }
-    const { email, mobileNumber } = req.body;
+    const { email, mobileNumber, userTimeZone } = req.body;
     // Capital First Letter
     const name = capitalizeFirstLetter(req.body.name);
     // Is user already present
@@ -118,7 +141,12 @@ const register = async (req, res) => {
       );
     }
     // Create in database
-    const user = await User.create({ name, email, mobileNumber });
+    const user = await User.create({
+      name,
+      email,
+      mobileNumber,
+      advocateAvailability,
+    });
     // Generate OTP for Email
     const otp = generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
     // Sending OTP to mobile number
@@ -128,6 +156,13 @@ const register = async (req, res) => {
       validTill: new Date().getTime() + parseInt(OTP_VALIDITY_IN_MILLISECONDS),
       otp: otp,
       receiverId: user._id,
+    });
+    // Register Notification In App
+    await UserNotification.create({
+      title: `${REGISTRATION_TITLE} ${name}.`,
+      message: `${REGISTRATION_MESSAGE}.`,
+      type: REGISTRATION_TYPE,
+      recipient: user._id,
     });
     // Send final success response
     return successResponse(
@@ -216,6 +251,13 @@ const verifyMobileOTP = async (req, res) => {
     // Update user
     updateData.refreshToken = refreshToken;
     await user.updateOne(updateData);
+    // Login Notification In App
+    await UserNotification.create({
+      title: `${LOGIN_TITLE} ${user.name}.`,
+      message: `${LOGIN_MESSAGE}.`,
+      type: LOGIN_TYPE,
+      recipient: user._id,
+    });
     // Final Response
     return successResponse(res, 201, `Welcome, ${user.name}`, {
       accessToken,
@@ -367,6 +409,13 @@ const bookingMode = async (req, res) => {
     const bookingMode = req.body.bookingMode;
     // Update
     await User.updateOne({ _id: req.user._id }, { $set: { bookingMode } });
+    // Mode Notification In App
+    await UserNotification.create({
+      title: `${BOOKING_MODE_TITLE}.`,
+      message: `${BOOKING_MODE_MESSAGE} ${bookingMode}.`,
+      type: BOOKING_MODE_TYPE,
+      recipient: req.user._id,
+    });
     // Send final success response
     return successResponse(res, 201, `Mode change successfully!`);
   } catch (err) {
@@ -451,13 +500,7 @@ const updateUser = async (req, res) => {
 
 const searchAdvocate = async (req, res) => {
   try {
-    const {
-      search,
-      experienceLowerLimit,
-      experienceUpperLimit,
-      starRating,
-      role = "advocate",
-    } = req.query;
+    const { search, starRating, role = "advocate" } = req.query;
 
     const resultPerPage = req.query.resultPerPage
       ? parseInt(req.query.resultPerPage)

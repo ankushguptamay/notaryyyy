@@ -11,6 +11,11 @@ import {
   deleteOfficePic,
 } from "../Controller/user.controller.js";
 import { category, categoryById } from "../Controller/category.controller.js";
+import {
+  bookingDetails,
+  myBooking,
+  changeStatus,
+} from "../Controller/booking.controller.js";
 
 // Middleware
 import { failureResponse } from "../MiddleWare/responseMiddleware.js";
@@ -40,5 +45,10 @@ router.delete("/officePic/:id", deleteOfficePic);
 // Category
 router.get("/category", category);
 router.get("/category/:id", categoryById);
+
+// Booking
+router.get("/bookings", myBooking);
+router.get("/bookings/:id", bookingDetails);
+router.put("/bookings/:id", changeStatus);
 
 export default router;

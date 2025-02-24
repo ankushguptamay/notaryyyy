@@ -52,6 +52,16 @@ const schema = new Schema(
     registrationNumber: { type: String, required: false },
     expiryDateOfRegistrationNumber: { type: Date },
     feesChargeByNotary: { type: String, required: false },
+    advocateAvailability: [
+      {
+        day: {
+          type: String,
+          enum: ["sun", "mon", "tues", "wed", "thur", "fri", "sat"],
+        },
+        available: { type: Boolean, default: true },
+        timePeriod: { type: String }, // In IST
+      },
+    ],
     officeOrChamberPics: [
       {
         fileName: { type: String },

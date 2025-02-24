@@ -12,6 +12,7 @@ const validateUserRegistration = (data) => {
       .length(10)
       .pattern(/^[0-9]+$/)
       .required(),
+    userTimeZone: joi.string().required(),
   });
   return schema.validate(data);
 };
@@ -85,6 +86,27 @@ const validateAddCategory = (data) => {
   return schema.validate(data);
 };
 
+const validateBookNotary = (data) => {
+  const schema = joi.object().keys({
+    advocate: joi.string().required(),
+    scheduledDate: joi.string().required(),
+    message: joi.string().min(20).max(1000).required(),
+    scheduledDay: joi
+      .string()
+      .valid("sun", "mon", "tues", "wed", "thur", "fri", "sat")
+      .required(),
+    category: joi.string().required(),
+  });
+  return schema.validate(data);
+};
+
+const validateChangeStatus = (data) => {
+  const schema = joi.object().keys({
+    bookingStatus: joi.string().valid("accepted", "rejected").required(),
+  });
+  return schema.validate(data);
+};
+
 export {
   validateUserRegistration,
   validateUserMobileLogin,
@@ -94,4 +116,6 @@ export {
   validateBookingMode,
   validateUpdateUser,
   validateAddCategory,
+  validateBookNotary,
+  validateChangeStatus,
 };
