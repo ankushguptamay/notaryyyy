@@ -32,7 +32,7 @@ const bookNotary = async (req, res) => {
     // Body
     const { advocate, scheduledDate, message, scheduledDay } = req.body;
     const client = req.user._id;
-    const category = capitalizeFirstLetter(category);
+    const category = capitalizeFirstLetter(req.body.category);
     // Find Advocate
     const notary = await User.findOne({
       _id: advocate,
@@ -119,7 +119,7 @@ const myBooking = async (req, res) => {
       query.$and.push({ advocate: req.user._id });
       query.$and.push({ scheduledDate: { $gte: new Date(scheduledDate) } });
     } else if (req.user.role === "user") {
-      query.$and.push({ advocate: req.user._id });
+      query.$and.push({ client: req.user._id });
     } else {
       return failureResponse(res, 401, "This role is not supported!", null);
     }
@@ -141,7 +141,7 @@ const myBooking = async (req, res) => {
         .limit(resultPerPage)
         // .populate(populate, "_id name profilePic")
         .lean(),
-      User.countDocuments(query),
+      Booking.countDocuments(query),
     ]);
     const totalPages = Math.ceil(totalBooking / resultPerPage) || 0;
     // Final response
@@ -250,7 +250,7 @@ const cancelBooking = async (req, res) => {
       client: req.user._id,
       isDelete: false,
     }).select("_id scheduledDate client bookingStatus");
-    if (!booking) {
+    if (!booking || booking.bookingStatus === "rejected") {
       return failureResponse(res, 400, "This booking is not present!", null);
     }
     // Update status
@@ -262,9 +262,7 @@ const cancelBooking = async (req, res) => {
       },
     });
     // Final response
-    return successResponse(res, 200, `Canceled successfully!`, {
-      data: transformData,
-    });
+    return successResponse(res, 200, `Canceled successfully!`);
   } catch (err) {
     failureResponse(res, 500, err.message, null);
   }

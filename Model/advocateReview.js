@@ -7,10 +7,7 @@ const schema = new Schema(
     message: { type: String },
     client: { type: Types.ObjectId, ref: "User", required: true },
     advocate: { type: Types.ObjectId, ref: "User", required: true },
-    advocateReply: {
-      reply: { type: String, required: true },
-      givenAt: { type: Date, default: Date.now },
-    },
+    advocateReply: { type: String, required: false, default: null },
     reactions: [{ type: Types.ObjectId, ref: "User" }],
     isDelete: { type: Boolean, default: false },
     deleted_at: { type: Date },

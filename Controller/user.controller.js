@@ -49,6 +49,25 @@ import { UserNotification } from "../Model/notificationModel.js";
 const bunnyFolderName = "not-doc";
 
 // Helper
+function getDistanceFromLatLonInKm(lat1, lon1, lat2, lon2) {
+  const R = 6371; // Radius of the Earth in kilometers
+  const dLat = deg2rad(lat2 - lat1); // Difference in latitude
+  const dLon = deg2rad(lon2 - lon1); // Difference in longitude
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const distance = R * c; // Distance in kilometers
+  return parseFloat(distance.toFixed(3));
+}
+
+function deg2rad(deg) {
+  return deg * (Math.PI / 180);
+}
+
 function transformUserDetails(user) {
   const data = {
     _id: user._id,
@@ -128,7 +147,7 @@ const register = async (req, res) => {
     if (error) {
       return failureResponse(res, 400, error.details[0].message, null);
     }
-    const { email, mobileNumber, userTimeZone } = req.body;
+    const { email, mobileNumber } = req.body;
     // Capital First Letter
     const name = capitalizeFirstLetter(req.body.name);
     // Is user already present
@@ -141,12 +160,7 @@ const register = async (req, res) => {
       );
     }
     // Create in database
-    const user = await User.create({
-      name,
-      email,
-      mobileNumber,
-      advocateAvailability,
-    });
+    const user = await User.create({ name, email, mobileNumber });
     // Generate OTP for Email
     const otp = generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
     // Sending OTP to mobile number
@@ -193,6 +207,7 @@ const loginByMobile = async (req, res) => {
     }
     // Generate OTP for Email
     const otp = generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
+    console.log(otp);
     // Sending OTP to mobile number
     await sendOTPToNumber(mobileNumber, otp);
     //  Store OTP
@@ -326,9 +341,12 @@ const rolePage = async (req, res) => {
       return failureResponse(res, 400, error.details[0].message, null);
     }
     const { role } = req.body;
+    // Update Data
+    const data = { role };
     // Define code prefix and message
     let codePreFix, message;
     if (role.toLowerCase() === "advocate") {
+      data.advocateAvailability = advocateAvailability;
       message = "advocate";
       codePreFix = "NOA";
     } else if (role.toLowerCase() === "user") {
@@ -342,15 +360,24 @@ const rolePage = async (req, res) => {
     }
     // generate User code
     const userCode = await generateUserCode(codePreFix);
+    data.userCode = userCode;
     // Update user
-    await User.findOneAndUpdate({ _id: req.user._id }, { role, userCode });
+    await User.findOneAndUpdate({ _id: req.user._id }, { $set: data });
     const accessToken = createUserAccessToken({ _id: req.user._id, role });
     // Final response
     return successResponse(
       res,
       201,
       `You are successfully register as ${message}!`,
-      { ...req.user._doc, role, accessToken }
+      {
+        ...req.user._doc,
+        role,
+        accessToken,
+        profilePic: req.user._doc.profilePic
+          ? req.user._doc.profilePic.url || null
+          : null,
+        userCode,
+      }
     );
   } catch (err) {
     failureResponse(res, 500, err.message, null);
@@ -503,11 +530,11 @@ const searchAdvocate = async (req, res) => {
     const {
       search,
       starRating,
-      userLocation = [],
-      radius = 3000, // 3km
+      loc = [],
+      radius = 10000, // 3km
       role = "advocate",
     } = req.query;
-    // const userLocation = [77.5946, 12.9716]; // User's longitude, latitude
+    // const loc = [28.65465,77.2969942]; // User's latitude,longitude
 
     const resultPerPage = req.query.resultPerPage
       ? parseInt(req.query.resultPerPage)
@@ -516,16 +543,24 @@ const searchAdvocate = async (req, res) => {
     const skip = (page - 1) * resultPerPage;
 
     //Search
-    let query = {
-      $and: [{ _id: { $nin: [req.user._id] } }, { role }, { isDelete: false }],
+    const query = {
+      $and: [
+        { _id: { $nin: [req.user._id] } },
+        { role },
+        { isDelete: false },
+        {
+          expiryDateOfRegistrationNumber: {
+            $gte: new Date(JSON.stringify(new Date()).slice(1, 11)),
+          },
+        },
+      ],
     };
     // Location
-    if (userLocation.length === 2) {
+    if (loc.length === 2) {
       query.$and.push({
-        officeOrChamberAddress: {
-          $near: {
-            $geometry: { type: "Point", coordinates: userLocation },
-            $maxDistance: radius,
+        "officeOrChamberAddress.coordinates": {
+          $geoWithin: {
+            $centerSphere: [loc, radius / 6378100],
           },
         },
       });
@@ -537,26 +572,15 @@ const searchAdvocate = async (req, res) => {
       const startWith = new RegExp("^" + search.toLowerCase(), "i");
       query.$and.push({ name: startWith });
     }
-    // Filter
-    if ((experienceLowerLimit, experienceUpperLimit)) {
-      query.$and.push({
-        experience_year: {
-          $gte: parseInt(experienceLowerLimit),
-          $lte: parseInt(experienceUpperLimit),
-        },
-      });
-    }
     // Average rating
     if (starRating) {
-      query.$and.push({
-        averageRating: { $gte: parseInt(starRating) },
-      });
+      query.$and.push({ averageRating: { $gte: parseInt(starRating) } });
     }
     // Get required data
     const [advocate, totalAdvocate] = await Promise.all([
       User.find(query)
         .select(
-          "_id name role profilePic gender registrationNumber averageRating"
+          "_id name role profilePic gender registrationNumber averageRating officeOrChamberAddress"
         )
         .sort({ averageRating: -1 })
         .skip(skip)
@@ -575,6 +599,16 @@ const searchAdvocate = async (req, res) => {
         profilePic: user.profilePic ? user.profilePic.url || null : null,
         averageRating: user.averageRating,
         registrationNumber: user.registrationNumber,
+        officeOrChamberAddress: {
+          address: user.officeOrChamberAddress.address,
+          coordinates: user.officeOrChamberAddress.coordinates,
+          distanceFromUserLocationInKM: getDistanceFromLatLonInKm(
+            loc[0],
+            loc[1],
+            user.officeOrChamberAddress.coordinates[0],
+            user.officeOrChamberAddress.coordinates[1]
+          ),
+        },
       };
     });
     const totalPages = Math.ceil(totalAdvocate / resultPerPage) || 0;
@@ -585,12 +619,17 @@ const searchAdvocate = async (req, res) => {
       currentPage: page,
     });
   } catch (err) {
-    failureResponse(res, 500, err.message, null);
+    console.log(err);
+    failureResponse(res, 500, err, null);
   }
 };
 
 const advocateDetails = async (req, res) => {
   try {
+    const loc = req.query.loc;
+    if (loc.length !== 2) {
+      return failureResponse(res, 400, "User location is required!", null);
+    }
     const user = await User.findById(req.params.id).select(
       "-email -mobileNumber -lastLogin -refreshToken -isDelete -deleted_at -createdAt -updatedAt"
     );
@@ -600,7 +639,18 @@ const advocateDetails = async (req, res) => {
     // TransForm data
     const data = transformUserDetails(user._doc);
     // Send final success response
-    return successResponse(res, 200, "Fetched successfully!", data);
+    return successResponse(res, 200, "Fetched successfully!", {
+      ...data,
+      officeOrChamberAddress: {
+        ...data.officeOrChamberAddress,
+        distanceFromUserLocationInKM: getDistanceFromLatLonInKm(
+          loc[0],
+          loc[1],
+          data.officeOrChamberAddress.coordinates[0],
+          data.officeOrChamberAddress.coordinates[1]
+        ),
+      },
+    });
   } catch (err) {
     failureResponse(res, 500, err.message, null);
   }

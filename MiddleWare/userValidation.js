@@ -12,7 +12,6 @@ const validateUserRegistration = (data) => {
       .length(10)
       .pattern(/^[0-9]+$/)
       .required(),
-    userTimeZone: joi.string().required(),
   });
   return schema.validate(data);
 };
@@ -53,20 +52,36 @@ const validateRolePage = (data) => {
 const validateUpdateAdvocate = (data) => {
   const schema = joi.object().keys({
     name: joi.string().min(3).max(30).required(),
-    officeOrChamberAddress: joi.object().required(),
+    officeOrChamberAddress: joi
+      .object()
+      .keys({
+        address: joi.string().min(3).max(30).required(),
+        coordinates: joi
+          .array()
+          .length(2)
+          .items(joi.number().required())
+          .required(),
+      })
+      .required(),
     courtOfPractice: joi.string().optional(),
-    dateOfBirth: joi.string().optional(),
+    dateOfBirth: joi
+      .string()
+      .pattern(/^\d{4}-\d{2}-\d{2}$/)
+      .optional(),
     gender: joi.string().valid("male", "female", "other").optional(),
     registrationNumber: joi.string().required(),
     feesChargeByNotary: joi.number().required(),
-    expiryDateOfRegistrationNumber: joi.string().required(),
+    expiryDateOfRegistrationNumber: joi
+      .string()
+      .pattern(/^\d{4}-\d{2}-\d{2}$/)
+      .required(),
   });
   return schema.validate(data);
 };
 
 const validateBookingMode = (data) => {
   const schema = joi.object().keys({
-    bookingMode: joi.string().valid().required(),
+    bookingMode: joi.string().valid("instant", "mannual").required(),
   });
   return schema.validate(data);
 };
@@ -89,7 +104,10 @@ const validateAddCategory = (data) => {
 const validateBookNotary = (data) => {
   const schema = joi.object().keys({
     advocate: joi.string().required(),
-    scheduledDate: joi.string().required(),
+    scheduledDate: joi
+      .string()
+      .pattern(/^\d{4}-\d{2}-\d{2}$/)
+      .required(),
     message: joi.string().min(20).max(1000).required(),
     scheduledDay: joi
       .string()

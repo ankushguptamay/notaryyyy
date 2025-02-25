@@ -46,11 +46,11 @@ const schema = new Schema(
     officeOrChamberAddress: {
       address: { type: String },
       type: { type: String, enum: ["Point"], default: "Point" },
-      coordinates: { type: [Number], required: false, index: "2dsphere" }, // [longitude, latitude]
+      coordinates: { type: [Number], required: false, index: "2dsphere" }, // [latitude, longitude]
     },
     courtOfPractice: { type: String, required: false },
     registrationNumber: { type: String, required: false },
-    expiryDateOfRegistrationNumber: { type: Date },
+    expiryDateOfRegistrationNumber: { type: Date, unique: true },
     feesChargeByNotary: { type: String, required: false },
     advocateAvailability: [
       {

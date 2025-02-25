@@ -1,3 +1,7 @@
+import {
+  failureResponse,
+  successResponse,
+} from "../MiddleWare/responseMiddleware.js";
 import { UserNotification } from "../Model/notificationModel.js";
 
 const myNotification = async (req, res) => {

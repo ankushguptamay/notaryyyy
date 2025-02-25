@@ -57,7 +57,7 @@ router.get("/category/:id", categoryById);
 // Booking
 router.get("/bookings", myBooking);
 router.get("/bookings/:id", bookingDetails);
-router.post("/booking", bookNotary);
+router.post("/bookings", bookNotary);
 router.put("/bookings/:id", cancelBooking);
 
 // Notification
