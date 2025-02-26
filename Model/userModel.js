@@ -50,7 +50,7 @@ const schema = new Schema(
     },
     courtOfPractice: { type: String, required: false },
     registrationNumber: { type: String, required: false },
-    expiryDateOfRegistrationNumber: { type: Date, unique: true },
+    expiryDateOfRegistrationNumber: { type: Date, unique: false },
     feesChargeByNotary: { type: String, required: false },
     advocateAvailability: [
       {

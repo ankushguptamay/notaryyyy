@@ -207,7 +207,6 @@ const loginByMobile = async (req, res) => {
     }
     // Generate OTP for Email
     const otp = generateFixedLengthRandomNumber(OTP_DIGITS_LENGTH);
-    console.log(otp);
     // Sending OTP to mobile number
     await sendOTPToNumber(mobileNumber, otp);
     //  Store OTP
@@ -531,7 +530,7 @@ const searchAdvocate = async (req, res) => {
       search,
       starRating,
       loc = [],
-      radius = 10000, // 3km
+      radius = 50000, //50km
       role = "advocate",
     } = req.query;
     // const loc = [28.65465,77.2969942]; // User's latitude,longitude
@@ -619,8 +618,7 @@ const searchAdvocate = async (req, res) => {
       currentPage: page,
     });
   } catch (err) {
-    console.log(err);
-    failureResponse(res, 500, err, null);
+    failureResponse(res, 500, err.message, null);
   }
 };
 
